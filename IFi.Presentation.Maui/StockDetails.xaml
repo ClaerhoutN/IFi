@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="IFi.Presentation.Maui.StockDetails"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Maui;assembly=LiveChartsCore.SkiaSharpView.Maui"
+             Title="Stock details">
+    <VerticalStackLayout>
+        <Grid ColumnDefinitions="*,*" RowDefinitions="*,*,*,*">
+            <Label Grid.Column="0" Grid.Row="0" Margin="5" HorizontalTextAlignment="Center" Text="{Binding Stock.Symbol, StringFormat='{0}'}"/>
+            <Label Grid.Column="0" Grid.Row="1" Margin="5" HorizontalTextAlignment="Center" Text="{Binding Ticker.Name}"/>
+            <Label Grid.Column="0" Grid.Row="2" Margin="5" HorizontalTextAlignment="Center" Text="{Binding Stock.Close, StringFormat='close: {0:F2}'}"/>
+            <HorizontalStackLayout Grid.Column="0" Grid.Row="3" HorizontalOptions="Center">
+                <Label Text="Position: " VerticalTextAlignment="Center"/>
+                <Entry Text="{Binding Position, Mode=TwoWay}" HorizontalTextAlignment="Center" MinimumWidthRequest="20" />
+            </HorizontalStackLayout>
+            <Label Grid.Column="1" Grid.Row="0" Margin="5" HorizontalTextAlignment="Center" Text="{Binding StockPosition.Value, StringFormat='Value: {0:F2}'}"/>
+            <Label Grid.Column="1" Grid.Row="1" Margin="5" HorizontalTextAlignment="Center" Text="{Binding StockPosition.CurrentHoldingPct, StringFormat='Value (%): {0:P2}'}"/>
+            <Label Grid.Column="1" Grid.Row="2" Margin="5" HorizontalTextAlignment="Center" Text="{Binding StockPosition.TargetValue, StringFormat='Target value: {0:F2}'}"/>
+            <HorizontalStackLayout Grid.Column="1" Grid.Row="3" HorizontalOptions="Center">
+                <Label Text="Target value (%): " VerticalTextAlignment="Center"/>
+                <Entry Text="{Binding TargetHoldingPct, Mode=TwoWay}" HorizontalTextAlignment="Center" MinimumWidthRequest="20" />
+            </HorizontalStackLayout>
+        </Grid>
+        <Grid ColumnDefinitions="*,*,*,*,*">
+            <Label Grid.Column="0" FontSize="20" HorizontalTextAlignment="Center" Text="{Binding StockPosition.Change1Day, StringFormat='1D: {0:P2}'}" HeightRequest="30">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change1Day, Converter={StaticResource lessThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Red" />
+                    </DataTrigger>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change1Day, Converter={StaticResource greaterThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Green" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+            <Label Grid.Column="1" FontSize="20" HorizontalTextAlignment="Center" Text="{Binding StockPosition.Change7Days, StringFormat='7D: {0:P2}'}" HeightRequest="30">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change7Days, Converter={StaticResource lessThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Red" />
+                    </DataTrigger>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change7Days, Converter={StaticResource greaterThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Green" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+            <Label Grid.Column="2" FontSize="20" HorizontalTextAlignment="Center" Text="{Binding StockPosition.Change1Month, StringFormat='1M: {0:P2}'}" HeightRequest="30">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change1Month, Converter={StaticResource lessThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Red" />
+                    </DataTrigger>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change1Month, Converter={StaticResource greaterThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Green" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+            <Label Grid.Column="3" FontSize="20" HorizontalTextAlignment="Center" Text="{Binding StockPosition.Change3Months, StringFormat='3M: {0:P2}'}" HeightRequest="30">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change3Months, Converter={StaticResource lessThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Red" />
+                    </DataTrigger>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change3Months, Converter={StaticResource greaterThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Green" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+            <Label Grid.Column="4" FontSize="20" HorizontalTextAlignment="Center" Text="{Binding StockPosition.Change1Year, StringFormat='1Y: {0:P2}'}" HeightRequest="30">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change1Year, Converter={StaticResource lessThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Red" />
+                    </DataTrigger>
+                    <DataTrigger TargetType="Label" Binding="{Binding StockPosition.Change1Year, Converter={StaticResource greaterThanConverter}}" Value="True">
+                        <Setter Property="TextColor"  Value="Green" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+        </Grid>
+        <Button Margin="5" Text="Delete" Command="{Binding DeleteStockCommand}"/>
+        <Grid HeightRequest="400" IsVisible="{Binding ChartVisibile}">
+            <lvc:CartesianChart
+                Series="{Binding Series}" XAxes="{Binding XAxes}">
+            </lvc:CartesianChart>
+        </Grid>
+    </VerticalStackLayout>
+</ContentPage>
