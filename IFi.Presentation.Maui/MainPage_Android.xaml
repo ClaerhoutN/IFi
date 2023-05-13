@@ -1,0 +1,323 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="IFi.Presentation.Maui.MainPage_Android"
+             xmlns:views="clr-namespace:IFi.Presentation.Maui">
+    <Grid RowDefinitions="auto, auto, *">
+        <Button Grid.Row="0" Text="+" Command="{Binding NavigateCommand}" CommandParameter="{x:Type views:AddStock}" Margin="5"/>
+        <Grid Grid.Row="1" RowDefinitions="auto" ColumnDefinitions="*,*,*,*,*" Padding="10,0,10,0">
+            <Grid.Resources>
+                <Style TargetType="Button">
+                    <Setter Property="FontSize" Value="12"></Setter>
+                    <Setter Property="Padding" Value="5"></Setter>
+                    <Setter Property="CornerRadius" Value="0"></Setter>
+                    <Setter Property="BorderColor" Value="Gray"></Setter>
+                    <Setter Property="BorderWidth" Value="1"></Setter>
+                </Style>
+            </Grid.Resources>
+            <!--<Button Grid.Column="0" FontSize="12" Padding="5" Text="Symbol" Command="{Binding SortCommand}" CommandParameter="Stock.Symbol"/>-->
+            <Button Grid.Column="0" Text="Position" Command="{Binding SortCommand}" CommandParameter="Position">
+                <Button.Triggers>
+                    <MultiTrigger TargetType="Button">
+                        <MultiTrigger.Conditions>
+                            <BindingCondition Binding="{Binding IsSorted_Position}" Value="True" />
+                            <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Text" Value="Position ↓" />
+                    </MultiTrigger>
+                    <MultiTrigger TargetType="Button">
+                        <MultiTrigger.Conditions>
+                            <BindingCondition Binding="{Binding IsSorted_Position}" Value="True" />
+                            <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Text" Value="Position ↑" />
+                    </MultiTrigger>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSorted_Position}" Value="False">
+                        <Setter Property="Text" Value="Position" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+            <Button Grid.Column="1" Text="Close" Command="{Binding SortCommand}" CommandParameter="Stock.Close">
+                <Button.Triggers>
+                    <MultiTrigger TargetType="Button">
+                        <MultiTrigger.Conditions>
+                            <BindingCondition Binding="{Binding IsSorted_StockClose}" Value="True" />
+                            <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Text" Value="Close ↓" />
+                    </MultiTrigger>
+                    <MultiTrigger TargetType="Button">
+                        <MultiTrigger.Conditions>
+                            <BindingCondition Binding="{Binding IsSorted_StockClose}" Value="True" />
+                            <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Text" Value="Close ↑" />
+                    </MultiTrigger>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSorted_StockClose}" Value="False">
+                        <Setter Property="Text" Value="Close" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+            <Button Grid.Column="2" Text="Value" Command="{Binding SortCommand}" CommandParameter="Value">
+                <Button.Triggers>
+                    <MultiTrigger TargetType="Button">
+                        <MultiTrigger.Conditions>
+                            <BindingCondition Binding="{Binding IsSorted_Value}" Value="True" />
+                            <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Text" Value="Value ↓" />
+                    </MultiTrigger>
+                    <MultiTrigger TargetType="Button">
+                        <MultiTrigger.Conditions>
+                            <BindingCondition Binding="{Binding IsSorted_Value}" Value="True" />
+                            <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Text" Value="Value ↑" />
+                    </MultiTrigger>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSorted_Value}" Value="False">
+                        <Setter Property="Text" Value="Value" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+            <Button Grid.Column="3" Text="Target value" Command="{Binding SortCommand}" CommandParameter="TargetValue" LineBreakMode="WordWrap">
+                <Button.Triggers>
+                    <MultiTrigger TargetType="Button">
+                        <MultiTrigger.Conditions>
+                            <BindingCondition Binding="{Binding IsSorted_TargetValue}" Value="True" />
+                            <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Text" Value="Target value ↓" />
+                    </MultiTrigger>
+                    <MultiTrigger TargetType="Button">
+                        <MultiTrigger.Conditions>
+                            <BindingCondition Binding="{Binding IsSorted_TargetValue}" Value="True" />
+                            <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                        </MultiTrigger.Conditions>
+                        <Setter Property="Text" Value="Target value ↑" />
+                    </MultiTrigger>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSorted_TargetValue}" Value="False">
+                        <Setter Property="Text" Value="Target value" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+            <VerticalStackLayout Grid.Column="4" Padding="5">
+                <VerticalStackLayout.Style>
+                    <Style TargetType="VerticalStackLayout">
+                        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}" />
+                    </Style>
+                </VerticalStackLayout.Style>
+                <VerticalStackLayout.Resources>
+                    <Style TargetType="Label">
+                        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Primary}}" />
+                        <Setter Property="FontFamily" Value="OpenSansRegular"/>
+                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="HorizontalOptions" Value="Center"/>
+                    </Style>
+                    <Style TargetType="Picker">
+                        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Primary}}" />
+                        <Setter Property="FontFamily" Value="OpenSansRegular"/>
+                        <Setter Property="FontSize" Value="12"/>
+                        <!--<Setter Property="HorizontalOptions" Value="Center"/>-->
+                    </Style>
+                </VerticalStackLayout.Resources>
+                <HorizontalStackLayout>
+                    <Label Text="Change:" />
+                    <Button Command="{Binding ReverseSortOrderCommand}" Padding="2" Margin="2">
+                        <Button.Triggers>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Day}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↓" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Day}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↑" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change7Days}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↓" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change7Days}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↑" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Month}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↓" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Month}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↑" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change3Months}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↓" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change3Months}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↑" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Year}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Desc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↓" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Year}" Value="True" />
+                                    <BindingCondition Binding="{Binding SortOrder}" Value="Asc" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Text" Value="↑" />
+                            </MultiTrigger>
+                            <MultiTrigger TargetType="Button">
+                                <MultiTrigger.Conditions>
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Day}" Value="False" />
+                                    <BindingCondition Binding="{Binding IsSorted_Change7Days}" Value="False" />
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Month}" Value="False" />
+                                    <BindingCondition Binding="{Binding IsSorted_Change3Months}" Value="False" />
+                                    <BindingCondition Binding="{Binding IsSorted_Change1Year}" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="IsVisible" Value="False" />
+                            </MultiTrigger>
+                        </Button.Triggers>
+                    </Button>
+                </HorizontalStackLayout>
+                <Border Stroke="Gray" StrokeThickness="1" BackgroundColor="Transparent" Padding="5,-5,5,-5" HorizontalOptions="Center">
+                    <Picker ItemsSource="{Binding ChangePeriods}" SelectedItem="{Binding SelectedPeriod, Mode=TwoWay}" />
+                </Border>
+            </VerticalStackLayout>
+        </Grid>
+        <CollectionView Grid.Row="2" ItemsSource="{Binding StockPositions}">
+            <CollectionView.Footer>
+                <StackLayout BackgroundColor="LightGray">
+                    <Label Text="{Binding TotalValue, StringFormat='Total value: {0}'}" />
+                    <Label Text="{Binding TotalTargetHoldingPct, StringFormat='Total target holding: {0:P2}'}" />
+                </StackLayout>
+            </CollectionView.Footer>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Stroke="Gray" StrokeThickness="2" BackgroundColor="{Binding BackgroundColor}" Padding="10">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="TapGestureRecognizer_Tapped" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout>
+                            <Label HorizontalTextAlignment="Center" Text="{Binding Stock.Symbol, StringFormat='{0}'}"/>
+                            <Label HorizontalTextAlignment="Center" Text="{Binding Ticker.Name}" />
+                            <Grid RowDefinitions="auto" ColumnDefinitions="*,*,*,*,*">
+                                <Grid.Resources>
+                                    <Style TargetType="Label">
+                                        <Setter Property="FontSize" Value="12"></Setter>
+                                    </Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Stroke" Value="Black"></Setter>
+                                        <Setter Property="StrokeThickness" Value="1"></Setter>
+                                        <Setter Property="StrokeDashArray" Value="5,2" />
+                                        <Setter Property="StrokeDashOffset" Value="2"/>
+                                        <Setter Property="Padding" Value="2"/>
+                                    </Style>
+                                </Grid.Resources>
+                                <Border Grid.Column="0">
+                                    <Label HorizontalOptions="Center" Text="{Binding Position, StringFormat='{0}'}" />
+                                </Border>
+                                <Border Grid.Column="1">
+                                    <Label HorizontalOptions="Center" Text="{Binding Stock.Close, StringFormat='{0:F2}'}"/>
+                                </Border>
+                                <Border Grid.Column="2">
+                                    <VerticalStackLayout>
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding Value, StringFormat='{0:F2}'}"/>
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding CurrentHoldingPct, StringFormat='{0:P2}'}"/>
+                                    </VerticalStackLayout>
+                                </Border>
+                                <Border Grid.Column="3">
+                                    <VerticalStackLayout>
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding TargetValue, StringFormat='{0:F2}'}"/>
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding TargetHoldingPct, StringFormat='{0:P2}'}"/>
+                                    </VerticalStackLayout>
+                                </Border>
+                                <Border Grid.Column="4">
+                                    <VerticalStackLayout Grid.Column="4">
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding Change1Day, StringFormat='1D: {0:P2}'}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change1Day, Converter={StaticResource lessThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Red" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change1Day, Converter={StaticResource greaterThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Green" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding Change7Days, StringFormat='7D: {0:P2}'}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change7Days, Converter={StaticResource lessThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Red" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change7Days, Converter={StaticResource greaterThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Green" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding Change1Month, StringFormat='1M: {0:P2}'}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change1Month, Converter={StaticResource lessThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Red" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change1Month, Converter={StaticResource greaterThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Green" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding Change3Months, StringFormat='3M: {0:P2}'}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change3Months, Converter={StaticResource lessThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Red" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change3Months, Converter={StaticResource greaterThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Green" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label HorizontalTextAlignment="Center" Text="{Binding Change1Year, StringFormat='1Y: {0:P2}'}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change1Year, Converter={StaticResource lessThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Red" />
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding Change1Year, Converter={StaticResource greaterThanConverter}}" Value="True">
+                                                    <Setter Property="TextColor"  Value="Green" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>
