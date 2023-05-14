@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using IFi.Domain;
 using IFi.Domain.ApiResponse;
+using IFi.Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
             _mainVm = mainVm;
             AddStockCommand = new Command(async () =>
             {
-                await _mainVm.AddStockPositionAsync(Ticker);
+                await _mainVm.FileService.AddStockPositionAsync(Ticker);
                 await navigateBack();
             });
             SearchCommand = new Command<string>(async s => await Search(s));
@@ -35,7 +36,11 @@ namespace IFi.Presentation.VM.Maui.ViewModels
         {
             Ticker = null;
             var tickers = await _repo.GetTickersAsync(search);
-            TickersResult = tickers.OrderBy(x => x.Name).ToList();
+            TickersResult = tickers
+                .Concat(Currency.AllTickers.Where(x => 
+                    x.Symbol.Contains(search, StringComparison.OrdinalIgnoreCase) 
+                    || x.Name.Contains(search, StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(x => x.Name).ToList();
         }
     }
 }

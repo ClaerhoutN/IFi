@@ -3,6 +3,7 @@ using IFi.Domain;
 using IFi.Domain.ApiResponse;
 using IFi.Domain.Models;
 using IFi.Utilities.JsonConverters;
+using LiveChartsCore.Measure;
 using Microsoft.Maui.Controls;
 using System;
 using System.Collections;
@@ -18,16 +19,11 @@ namespace IFi.Presentation.VM.Maui.ViewModels
 {
     public partial class MainVM : ObservableObject
     {
-        private readonly string _historicalDataDirectory = "historicalData";
-        private readonly string _stockPositionsFileName = Path.Combine(FileSystem.Current.AppDataDirectory, "stockPositions.txt");
-
-        private readonly StockMarketDataRepository _repo = new();
+        public StockMarketDataFileService FileService { get; } //todo: make private and construct StockMarketDataFileService with DI
         [ObservableProperty]
         private IEnumerable<StockPosition> _stockPositions;
         public decimal TotalValue => StockPositions?.Sum(x => x.Value) ?? 0m;
         public float TotalTargetHoldingPct => StockPositions?.Sum(x => x.TargetHoldingPct) ?? 0f;
-        private DateTime HistoricalDataFrom => DateTime.Today.AddYears(-1);
-        private DateTime HistoricalDataTo => DateTime.Today;
         private readonly Func<Page, Task> _navigate;
         public ICommand NavigateCommand { get; }
         public ICommand SortCommand { get; }
@@ -37,6 +33,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
         private string _selectedPeriod;
         [ObservableProperty]
         private string _sortOrder;
+        #region _isSorted_
         [ObservableProperty]
         private bool _isSorted_StockSymbol;
         [ObservableProperty]
@@ -57,6 +54,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
         private bool _isSorted_Change3Months;
         [ObservableProperty]
         private bool _isSorted_Change1Year;
+        #endregion #region _isSorted_
         private string _sortedField;
         public MainVM(Func<Page, Task> navigate)
         {
@@ -71,6 +69,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
             ReverseSortOrderCommand = new Command(() => Sort(_sortedField));
             SelectedPeriod = "1 day";
             PropertyChanged += MainVM_PropertyChanged;
+            FileService = new(sp => StockPositions = sp, () => StockPositions, StockPosition_PropertyChanged);
         }
 
         private void MainVM_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -99,111 +98,11 @@ namespace IFi.Presentation.VM.Maui.ViewModels
 
         public async Task InitializeAsync()
         {
-            StockPositions = (await GetStockPositionsAsync()).OrderBy(x => x.Stock.Symbol);
-        }
-
-        private async Task<IReadOnlyList<StockPosition>> GetStockPositionsAsync()
-        {
-            var (stockPositions, needsUpdate) = await ReadStockPositionsAsync();
-            if (needsUpdate)
+            StockPositions = (await FileService.GetStockPositionsAsync()).OrderBy(x => x.Stock.Symbol);
+            foreach(var stockPosition in StockPositions)
             {
-                var stocks = await _repo.GetStocksAsync(stockPositions
-                    .Where(x => !Currencies.All.Any(y => y.Symbol == x.Stock.Symbol))
-                    .Select(x => x.Stock.Symbol).ToArray());
-                foreach (var stockPosition in stockPositions)
-                    stockPosition.Stock = stocks.FirstOrDefault(x => x.Symbol == stockPosition.Stock.Symbol) ?? stockPosition.Stock;
-            }
-            if(! stockPositions.Any(x => x.Stock.Symbol == "EUR"))
-            {
-                stockPositions.Add(new StockPosition(Currencies.EUR, new(){ Name = "EUR" }));
-                needsUpdate = true;
-            }
-            var historicalData = await GetHistoricalDataAsync(HistoricalDataFrom, HistoricalDataTo, stockPositions.Select(x => x.Stock.Symbol).ToArray());
-            foreach (var stockPosition in stockPositions)
-            {
-                if (string.IsNullOrEmpty(stockPosition.Ticker?.Name))
-                {
-                    stockPosition.Ticker = await _repo.GetTickerAsync(stockPosition.Stock.Symbol);
-                    needsUpdate = true;
-                }
-                stockPosition.HistoricalData = historicalData[stockPosition.Stock.Symbol];
-            }
-            foreach (var stockPosition in stockPositions)
-            {
-                stockPosition.Refresh(stockPositions);
                 stockPosition.PropertyChanged += StockPosition_PropertyChanged;
             }
-            if(needsUpdate)
-                await SaveStockPositionsAsync(stockPositions);
-            return stockPositions;
-        }
-        //guaranteed to have all symbols as keys
-        private async Task<Dictionary<string, Stock[]>> GetHistoricalDataAsync(DateTime from, DateTime to, params string[] symbols)
-        {
-            Dictionary<string, Stock[]> dataBySymbol = new Dictionary<string, Stock[]>();
-            foreach (string symbol in symbols)
-            {
-                Stock[] data = null;
-                if (Currencies.All.Any(y => y.Symbol == symbol))
-                    data = new Stock[0];
-                else
-                    data = await ReadHistoricalDataAsync(symbol);
-                if (data != null)
-                    dataBySymbol.Add(symbol, data);
-            }
-            string[] symbolsToFetch = symbols.Where(x => !dataBySymbol.ContainsKey(x)).ToArray();
-            var historicalData = await _repo.GetHistoricalDataAsync(symbolsToFetch, from, to);
-            foreach(string symbol in symbolsToFetch)
-            {
-                if (historicalData.TryGetValue(symbol, out var value))
-                {
-                    dataBySymbol.Add(symbol, value);
-                    await SaveHistoricalDataAsync(value, symbol);
-                }
-                else
-                    dataBySymbol.Add(symbol, new Stock[0]);
-            }
-            return dataBySymbol;
-        }
-        private async Task<Stock[]> ReadHistoricalDataAsync(string symbol)
-        {
-            string path = Path.Combine(FileSystem.Current.AppDataDirectory, _historicalDataDirectory, $"{symbol}.txt");
-            Stock[] data = null;
-            if (File.Exists(path))
-            {
-                string json = await File.ReadAllTextAsync(path);
-                data = JsonSerializer.Deserialize<Stock[]>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
-            }
-            return data;
-        }
-        private Task SaveHistoricalDataAsync(Stock[] data, string symbol)
-        {
-            if(!Directory.Exists(Path.Combine(FileSystem.Current.AppDataDirectory, _historicalDataDirectory)))
-                Directory.CreateDirectory(Path.Combine(FileSystem.Current.AppDataDirectory, _historicalDataDirectory));
-            string path = Path.Combine(FileSystem.Current.AppDataDirectory, _historicalDataDirectory, $"{symbol}.txt");
-            string json = JsonSerializer.Serialize(data, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
-            return File.WriteAllTextAsync(path, json);
-        }
-
-        private async Task<(List<StockPosition>, bool)> ReadStockPositionsAsync()
-        {
-            bool needsUpdate = false;
-            FileInfo fi = new (_stockPositionsFileName);
-            if (fi.Exists)
-            {
-                if (fi.LastWriteTime.Date != DateTime.Today)
-                    needsUpdate = true;
-                string json = await File.ReadAllTextAsync(_stockPositionsFileName);
-                var stockPositions = JsonSerializer.Deserialize<List<StockPosition>>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
-                return (stockPositions, needsUpdate);
-            }
-            return (new List<StockPosition>(), needsUpdate);
-        }
-
-        private Task SaveStockPositionsAsync(IReadOnlyList<StockPosition> stockPositions)
-        {
-            string json = JsonSerializer.Serialize(stockPositions, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
-            return File.WriteAllTextAsync(_stockPositionsFileName, json);
         }
         private SemaphoreSlim _fileLocker = new (1, 1);
         public async void Save()
@@ -211,47 +110,12 @@ namespace IFi.Presentation.VM.Maui.ViewModels
             await _fileLocker.WaitAsync();
             try
             {
-                await SaveStockPositionsAsync(StockPositions.ToList());
+                await FileService.SaveStockPositionsAsync(StockPositions.ToList());
             }
             finally
             {
                 _fileLocker.Release();
             }
-        }
-
-        internal async Task AddStockPositionAsync(string symbol)
-        {
-            var ticker = await _repo.GetTickerAsync(symbol);
-            await AddStockPositionAsync(ticker);
-        }
-
-        internal async Task AddStockPositionAsync(Ticker ticker)
-        {
-            var stockPositions = StockPositions.ToList();
-            var historicalData = (await GetHistoricalDataAsync(HistoricalDataFrom, HistoricalDataTo, ticker.Symbol)).Values.First();
-            var stock = historicalData.OrderByDescending(x => x.Date).FirstOrDefault();
-            var stockPosition = new StockPosition(
-                stock ?? (await _repo.GetStocksAsync(new[] { ticker.Symbol })).Single(), ticker);
-            stockPosition.HistoricalData = historicalData;
-            stockPositions.Add(stockPosition);
-            foreach (var _stockPosition in stockPositions)
-                _stockPosition.Refresh(stockPositions);
-            stockPosition.PropertyChanged += StockPosition_PropertyChanged;
-            await SaveStockPositionsAsync(stockPositions);
-
-            StockPositions = stockPositions;
-        }
-
-        internal async Task DeleteStockPositionAsync (StockPosition stockPosition)
-        {
-            var stockPositions = StockPositions.ToList();            
-            stockPositions.Remove(stockPosition);
-            foreach (var _stockPosition in stockPositions)
-                _stockPosition.Refresh(stockPositions);
-            stockPosition.PropertyChanged -= StockPosition_PropertyChanged;
-            await SaveStockPositionsAsync(stockPositions);
-
-            StockPositions = stockPositions;
         }
         private void Sort(string field)
         {
