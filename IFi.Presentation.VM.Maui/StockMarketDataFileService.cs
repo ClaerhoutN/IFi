@@ -37,27 +37,30 @@ namespace IFi.Presentation.VM.Maui
 
         public async Task<IReadOnlyList<StockPosition>> GetStockPositionsAsync()
         {
-            var (stockPositions, needsUpdate) = await ReadStockPositionsAsync();
-            if (needsUpdate)
-            {
-                var stocks = await _repo.GetStocksAsync(stockPositions
-                    .Where(x => !Currency.IsCurrency(x.Stock))
-                    .Select(x => x.Stock.Symbol).ToArray());
-                foreach (var stockPosition in stockPositions)
-                    stockPosition.Stock = stocks.FirstOrDefault(x => x.Symbol == stockPosition.Stock.Symbol) ?? stockPosition.Stock;
-            }
-            var historicalData = await GetHistoricalDataAsync(HistoricalDataFrom, HistoricalDataTo, stockPositions.Select(x => x.Stock.Symbol).ToArray());
+            var stockPositions = await ReadStockPositionsAsync();
+            var symbols = stockPositions.Select(x => x.Ticker.Symbol);
+            var historicalData = await GetHistoricalDataAsync(HistoricalDataFrom, HistoricalDataTo, symbols.ToArray());
+            bool needsUpdate = false;
             foreach (var stockPosition in stockPositions)
             {
-                if (string.IsNullOrEmpty(stockPosition.Ticker?.Name))
+                var data = historicalData[stockPosition.Ticker.Symbol];
+                var stock = data.OrderByDescending(x => x.Date).FirstOrDefault();
+                stockPosition.HistoricalData = data;
+
+                if (stock == null)
                 {
-                    if(Currency.IsCurrency(stockPosition.Stock))
-                        stockPosition.Ticker = Currency.FindTicker(stockPosition.Stock);
-                    else                    
-                        stockPosition.Ticker = await _repo.GetTickerAsync(stockPosition.Stock.Symbol);
+                    if (Currency.IsCurrency(stockPosition.Ticker))
+                        stock = Currency.AsStock(stockPosition.Ticker);
+                    else
+                        stock = (await _repo.GetStocksAsync(new[] { stockPosition.Ticker.Symbol })).FirstOrDefault();
                     needsUpdate = true;
                 }
-                stockPosition.HistoricalData = historicalData[stockPosition.Stock.Symbol];
+                else
+                {
+                    if(stockPosition.Stock == null || stockPosition.Stock.Date != stock.Date)
+                        needsUpdate = true;
+                }
+                stockPosition.Stock = stock;
             }
             foreach (var stockPosition in stockPositions)
             {
@@ -115,19 +118,16 @@ namespace IFi.Presentation.VM.Maui
             return File.WriteAllTextAsync(path, json);
         }
 
-        private async Task<(List<StockPosition>, bool)> ReadStockPositionsAsync()
+        private async Task<List<StockPosition>> ReadStockPositionsAsync()
         {
-            bool needsUpdate = false;
             FileInfo fi = new(_stockPositionsFileName);
             if (fi.Exists)
             {
-                if (fi.LastWriteTime.Date != DateTime.Today)
-                    needsUpdate = true;
                 string json = await File.ReadAllTextAsync(_stockPositionsFileName);
                 var stockPositions = JsonSerializer.Deserialize<List<StockPosition>>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
-                return (stockPositions, needsUpdate);
+                return stockPositions;
             }
-            return (new List<StockPosition>(), needsUpdate);
+            return new List<StockPosition>();
         }
 
         public Task SaveStockPositionsAsync(IReadOnlyList<StockPosition> stockPositions)
