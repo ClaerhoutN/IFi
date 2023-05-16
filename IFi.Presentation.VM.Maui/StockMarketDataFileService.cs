@@ -80,9 +80,12 @@ namespace IFi.Presentation.VM.Maui
                 if (Currency.IsCurrency(symbol))
                     data = new Stock[0];
                 else
+                {
                     data = await ReadHistoricalDataAsync(symbol);
-                if (data != null)
-                    dataBySymbol.Add(symbol, data);
+                    if (data == null || !IsHistoricalDataComplete(data, from, to))
+                        continue;
+                }
+                dataBySymbol.Add(symbol, data);
             }
             string[] symbolsToFetch = symbols.Where(x => !dataBySymbol.ContainsKey(x)).ToArray();
             var historicalData = await _repo.GetHistoricalDataAsync(symbolsToFetch, from, to);
@@ -179,6 +182,13 @@ namespace IFi.Presentation.VM.Maui
             await SaveStockPositionsAsync(stockPositions);
 
             _setStockPositions(stockPositions);
+        }
+
+        internal static bool IsHistoricalDataComplete(IEnumerable<Stock> historicalData, DateTime from, DateTime to)
+        {
+            var ordered = historicalData.OrderBy(x => x.Date);
+            return ordered.First().Date <= from && ordered.Last().Date >= to;
+            //does not account for gaps -> TODO, but how?
         }
     }
 }
