@@ -25,7 +25,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
         public float Change1Month => GetStockCloseDifferenceByPeriod(TimeSpan.FromDays(30));
         public float Change3Months => GetStockCloseDifferenceByPeriod(TimeSpan.FromDays(90));
         public float Change1Year => GetStockCloseDifferenceByPeriod(TimeSpan.FromDays(365));
-        public decimal Value => Stock.Close * Position;
+        public decimal Value => (Stock.Close ?? 0) * Position;
         [ObservableProperty]
         private float _currentHoldingPct;
         [ObservableProperty]

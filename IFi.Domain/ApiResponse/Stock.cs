@@ -8,13 +8,13 @@ namespace IFi.Domain.ApiResponse
     public class Stock
     {
         [JsonPropertyName("open")]
-        public decimal Open { get; set; }
+        public decimal? Open { get; set; }
         [JsonPropertyName("high")]
-        public decimal High { get; set; }
+        public decimal? High { get; set; }
         [JsonPropertyName("low")]
-        public decimal Low { get; set; }
+        public decimal? Low { get; set; }
         [JsonPropertyName("close")]
-        public decimal Close { get; set; }
+        public decimal? Close { get; set; }
         [JsonPropertyName("volume")]
         public decimal? Volume { get; set; }
         [JsonPropertyName("adj_high")]
@@ -28,9 +28,9 @@ namespace IFi.Domain.ApiResponse
         [JsonPropertyName("adj_volume")]
         public decimal? AdjVolume { get; set; }
         [JsonPropertyName("split_factor")]
-        public decimal SplitFactor { get; set; }
+        public decimal? SplitFactor { get; set; }
         [JsonPropertyName("dividend")]
-        public decimal Dividend { get; set; }
+        public decimal? Dividend { get; set; }
         [JsonPropertyName("symbol")]
         public string Symbol { get; set; }
         [JsonPropertyName("exchange")]
