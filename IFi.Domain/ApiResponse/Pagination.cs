@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace IFi.Domain.ApiResponse
 {
-    internal class Pagination
+    public class Pagination
     {
         [JsonPropertyName("limit")]
         public int Limit { get; set; }

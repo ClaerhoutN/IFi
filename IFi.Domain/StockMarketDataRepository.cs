@@ -31,10 +31,7 @@ namespace IFi.Domain
                 {
                     string json = await response.Content.ReadAsStringAsync();
 
-                    JsonSerializerOptions options = new JsonSerializerOptions();
-                    options.Converters.Add(new DateTimeOffsetConverter_ISO8601());
-
-                    var eod = JsonSerializer.Deserialize<Eod>(json, options);
+                    var eod = JsonSerializer.Deserialize<Eod>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
                     return eod.Data.ToList();
                 }
                 return new List<Stock>() { }; //todo
@@ -55,10 +52,7 @@ namespace IFi.Domain
                 {
                     string json = await response.Content.ReadAsStringAsync();
 
-                    JsonSerializerOptions options = new JsonSerializerOptions();
-                    options.Converters.Add(new DateTimeOffsetConverter_ISO8601());
-
-                    return JsonSerializer.Deserialize<Ticker>(json, options);
+                    return JsonSerializer.Deserialize<Ticker>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
                 }
                 return null; //todo
             }
@@ -78,10 +72,7 @@ namespace IFi.Domain
                 {
                     string json = await response.Content.ReadAsStringAsync();
 
-                    JsonSerializerOptions options = new JsonSerializerOptions();
-                    options.Converters.Add(new DateTimeOffsetConverter_ISO8601());
-
-                    var tickers = JsonSerializer.Deserialize<Tickers>(json, options);
+                    var tickers = JsonSerializer.Deserialize<Tickers>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
                     return tickers.Data;
                 }
                 return new Ticker[0]; //todo
@@ -107,10 +98,7 @@ namespace IFi.Domain
                     {
                         string json = await response.Content.ReadAsStringAsync();
 
-                        JsonSerializerOptions options = new JsonSerializerOptions();
-                        options.Converters.Add(new DateTimeOffsetConverter_ISO8601());
-
-                        var eod = JsonSerializer.Deserialize<Eod>(json, options);
+                        var eod = JsonSerializer.Deserialize<Eod>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
 
                         data.AddRange(eod.Data);
 

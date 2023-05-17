@@ -7,4 +7,9 @@
     <UserSecretsId>df7e754e-f350-490d-abfd-07b3163b42b2</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\IFi.Domain\IFi.Domain.csproj" />
+    <ProjectReference Include="..\IFi.Utilities\IFi.Utilities.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace IFi.Domain.ApiResponse
 {
-    internal class Eod
+    public class Eod
     {
         [JsonPropertyName("pagination")]
         public Pagination Pagination { get; set; }
