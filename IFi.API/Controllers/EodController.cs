@@ -36,6 +36,8 @@ namespace IFi.API.Controllers
         private async Task<Eod> GetEodAsync(string uri, QueryString queryString)
         {
             var paramValues = HttpUtility.ParseQueryString(queryString.Value);
+            if (paramValues["symbols"]  == null)
+                throw new ArgumentException("symbols parameter missing.");
             string[] symbols = paramValues["symbols"].Split(',');
             string exchange = paramValues["exchange"];
             IEnumerable<Stock> allStocks = null;
@@ -51,7 +53,7 @@ namespace IFi.API.Controllers
                 if (!DateTime.TryParseExact(paramValues["date_to"], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime to))
                     throw new ArgumentException("date_to parameter missing or is in an incorrect format.");
                 var stocksDictionary = await _stockRepository.GetStocksAsync(symbols, from, to, exchange);
-                allStocks = stocksDictionary.Values.SelectMany(x => x);                
+                allStocks = stocksDictionary?.Values?.SelectMany(x => x);                
             }
             else
             {
@@ -60,10 +62,10 @@ namespace IFi.API.Controllers
 
             IEnumerable<Stock> stocks = allStocks;
             if (int.TryParse(paramValues["offset"], out int offset))
-                stocks = stocks.Skip(offset);
+                stocks = stocks?.Skip(offset);
             if (int.TryParse(paramValues["limit"], out int limit))
-                stocks = stocks.Take(limit);
-            Stock[] stocksArray = stocks.ToArray();
+                stocks = stocks?.Take(limit);
+            Stock[] stocksArray = stocks?.ToArray();
             if (stocks != null)
                 return new Eod { Pagination = new Pagination { Total = allStocks.Count(), Count = stocksArray.Length, Limit = limit, Offset = offset }, Data = stocksArray };
 

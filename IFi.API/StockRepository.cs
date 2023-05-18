@@ -17,7 +17,7 @@ namespace IFi.API
         }
         private static readonly ConcurrentDictionary<string, List<Stock>> _stockCache = new ConcurrentDictionary<string, List<Stock>>();
         private const int limit = 1000;
-        public async Task<Dictionary<string, Stock[]>> GetStocksAsync(string[] symbols, DateTime from, DateTime to, string exchange = null)
+        public async Task<Dictionary<string, Stock[]>> GetStocksAsync(string[] symbols, DateTime from, DateTime to, string exchange = null, bool descending = true)
         {
             //todo: check cache to find missing dates
             List<Stock> data = new List<Stock>();
@@ -41,7 +41,7 @@ namespace IFi.API
                         total = eod.Pagination.Total;
                         offset += eod.Pagination.Count;
                     }
-                    else break;
+                    else return null;
                 }
                 catch
                 {
@@ -54,41 +54,77 @@ namespace IFi.API
             foreach (var stockGroup in data.GroupBy(x => x.Symbol))
             {
                 _stockCache.AddOrUpdate(stockGroup.Key, symbol => stockGroup.ToList(), (symbol, _stocks) => Merge(_stocks, stockGroup));
-                result.Add(stockGroup.Key, stockGroup.ToArray());
+                result.Add(stockGroup.Key, (descending ? stockGroup.OrderByDescending(x => x.Date) : stockGroup.OrderBy(x => x.Date)).ToArray());
             }
 
             return result;
         }
         public async Task<Stock[]> GetLatestStocksAsync(string[] symbols, string exchange = null)
         {
-            //todo: check cache by current date
-            string requestUri = $"eod/latest?symbols={string.Join(',', symbols)}";
-            if (exchange != null)
-                requestUri += $"&exchange={exchange}";
-            var response = await _client.GetAsync(requestUri);
-            if (response.IsSuccessStatusCode)
+            DateTimeOffset now = DateTimeOffset.Now; //what about closed days?
+            List<string> symbolsNotFound = symbols.ToList();
+            List<Stock> stocksFound = new List<Stock>();
+            foreach(string symbol in symbols)
             {
-                string json = await response.Content.ReadAsStringAsync();
-                var eod = JsonSerializer.Deserialize<Eod>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
-                foreach (var stock in eod.Data)
+                if(_stockCache.TryGetValue(symbol, out var stocks))
                 {
-                    _stockCache.AddOrUpdate(stock.Symbol, symbol => new(){ stock }, (symbol, _stocks) => Merge(_stocks, stock));
+                    Stock stock = stocks.FirstOrDefault(x => x.Date == now);
+                    if(stock != null)
+                    {
+                        stocksFound.Add(stock);
+                        symbolsNotFound.Remove(symbol);
+                    }
                 }
-                return eod.Data;
             }
+
+            //todo: check cache by current date
+            if (symbolsNotFound.Any())
+            {
+                string requestUri = $"eod/latest?symbols={string.Join(',', symbols)}";
+                if (exchange != null)
+                    requestUri += $"&exchange={exchange}";
+                var response = await _client.GetAsync(requestUri);
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    var eod = JsonSerializer.Deserialize<Eod>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
+                    foreach (var stock in eod.Data)
+                    {
+                        _stockCache.AddOrUpdate(stock.Symbol, symbol => new() { stock }, (symbol, _stocks) => Merge(_stocks, stock));
+                    }
+                    return stocksFound.Concat(eod.Data).ToArray();
+                }
+            }
+            else
+                return stocksFound.ToArray();
 
             return null;
         }
 
         private static List<Stock> Merge(IEnumerable<Stock> group1, IEnumerable<Stock> group2)
         {
-            //todo: check dates
-            return group1.Concat(group2).ToList();
+            List<Stock> sortedGroup1 = group1.OrderBy(x => x.Date).ToList();
+            List<Stock> result = sortedGroup1;
+            int offset = 0;
+            foreach(var stock2 in group2.OrderBy(stock => stock.Date))
+            {
+                bool found = false;
+                for(int i = offset; i < sortedGroup1.Count; ++i)
+                {
+                    Stock stock1 = sortedGroup1[i];
+                    if(stock1.Date < stock2.Date)
+                        offset = i+1;
+                    if(stock1.Date == stock2.Date)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found)
+                    result.Add(stock2);
+            }
+            return result;
         }
-        private static List<Stock> Merge(IEnumerable<Stock> group, Stock stock)
-        {
-            //todo: check dates
-            return group.Concat(stock.Yield()).ToList();
-        }
+        private static List<Stock> Merge(IEnumerable<Stock> group, Stock stock) => Merge(group, stock.Yield());
     }
 }
