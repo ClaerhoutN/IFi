@@ -37,27 +37,36 @@ namespace IFi.API.Controllers
         {
             var paramValues = HttpUtility.ParseQueryString(queryString.Value);
             string[] symbols = paramValues["symbols"].Split(',');
+            string exchange = paramValues["exchange"];
+            IEnumerable<Stock> allStocks = null;
+
             if (uri == "eod/latest")
             {
-                var stocks = await _stockRepository.GetLatestStocksAsync(symbols);
-                if(stocks != null)
-                    return new Eod { Pagination = new Pagination {  }, Data = stocks };
-
+                allStocks = await _stockRepository.GetLatestStocksAsync(symbols, exchange);
             }
             else if (uri == "eod")
             {
-                //todo: account for limit/offset parameters?
-                DateTime from = DateTime.ParseExact(paramValues["date_from"], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-                DateTime to = DateTime.ParseExact(paramValues["date_to"], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-                var stocksDictionary = await _stockRepository.GetStocksAsync(symbols, from, to);
-                var stocks = stocksDictionary.Values.SelectMany(x => x).ToArray();
-                if (stocks != null)
-                    return new Eod { Pagination = new Pagination { Total = stocks.Length, Count = stocks.Length }, Data = stocks };
+                if (!DateTime.TryParseExact(paramValues["date_from"], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime from))
+                    throw new ArgumentException("date_from parameter missing or is in an incorrect format.");
+                if (!DateTime.TryParseExact(paramValues["date_to"], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime to))
+                    throw new ArgumentException("date_to parameter missing or is in an incorrect format.");
+                var stocksDictionary = await _stockRepository.GetStocksAsync(symbols, from, to, exchange);
+                allStocks = stocksDictionary.Values.SelectMany(x => x);                
             }
             else
             {
                 throw new NotImplementedException();
             }
+
+            IEnumerable<Stock> stocks = allStocks;
+            if (int.TryParse(paramValues["offset"], out int offset))
+                stocks = stocks.Skip(offset);
+            if (int.TryParse(paramValues["limit"], out int limit))
+                stocks = stocks.Take(limit);
+            Stock[] stocksArray = stocks.ToArray();
+            if (stocks != null)
+                return new Eod { Pagination = new Pagination { Total = allStocks.Count(), Count = stocksArray.Length, Limit = limit, Offset = offset }, Data = stocksArray };
+
             return null;
         }
     }
