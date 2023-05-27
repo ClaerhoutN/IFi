@@ -1,0 +1,37 @@
+on: workflow_dispatch
+env:
+  AZURE_WEBAPP_NAME: ifi-dev
+  AZURE_WEBAPP_PACKAGE_PATH: IFi.API\published
+  CONFIGURATION: Release
+  PROJECT: IFi.API
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: dotnet build "${{ env.PROJECT }}" --configuration ${{ env.CONFIGURATION }}
+    - name: Test
+      run: dotnet test "${{ env.PROJECT }}" --no-build
+    - name: Publish
+      run: dotnet publish "${{ env.PROJECT }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+    - name: Publish Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: webapp
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    steps:
+    - name: Download artifact from build job
+      uses: actions/download-artifact@v3
+      with:
+        name: webapp
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    - name: Deploy to Azure WebApp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.ifi_dev_EEAF }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
