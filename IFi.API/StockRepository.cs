@@ -80,7 +80,7 @@ namespace IFi.API
             //todo: check cache by current date
             if (symbolsNotFound.Any())
             {
-                string requestUri = $"eod/latest?symbols={string.Join(',', symbols)}";
+                string requestUri = $"eod/latest?symbols={string.Join(',', symbolsNotFound)}";
                 if (exchange != null)
                     requestUri += $"&exchange={exchange}";
                 var response = await _client.GetAsync(requestUri);
