@@ -190,6 +190,7 @@ namespace IFi.Presentation.VM.Maui
             var ordered = historicalData.OrderBy(x => x.Date);
             return ordered.First().Date <= from && ordered.Last().Date >= to;
             //does not account for gaps -> TODO, but how?
+            //...
         }
     }
 }
