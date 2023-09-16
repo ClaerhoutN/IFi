@@ -2,6 +2,7 @@
 using IFi.Domain.ApiResponse;
 using IFi.Domain.Models;
 using IFi.Presentation.VM.Maui.ViewModels;
+using IFi.Utilities;
 using IFi.Utilities.JsonConverters;
 using LiveChartsCore.Measure;
 using System;
@@ -53,7 +54,10 @@ namespace IFi.Presentation.VM.Maui
                     if (Currency.IsCurrency(stockPosition.Ticker))
                         stock = Currency.AsStock(stockPosition.Ticker);
                     else
+                    {
                         stock = (await _repo.GetStocksAsync(new[] { stockPosition.Stock?.Symbol ?? stockPosition.Ticker.Symbol })).FirstOrDefault();
+                        AdjustForSplits(stock);
+                    }
                     needsUpdate = true;
                 }
                 else
@@ -82,8 +86,9 @@ namespace IFi.Presentation.VM.Maui
                     data = new Stock[0];
                 else
                 {
-                    data = await ReadHistoricalDataAsync(symbol);
-                    if (data == null || !IsHistoricalDataComplete(data, from, to))
+                    DateTime lastWriteTime;
+                    (data, lastWriteTime) = await ReadHistoricalDataAsync(symbol);
+                    if (data == null || (lastWriteTime.Date != DateTime.Today && !IsHistoricalDataComplete(data, from, to)))
                         continue;
                 }
                 dataBySymbol.Add(symbol, data);
@@ -95,6 +100,7 @@ namespace IFi.Presentation.VM.Maui
                 if (historicalData.TryGetValue(symbol, out var value))
                 {
                     dataBySymbol.Add(symbol, value);
+                    AdjustForSplits(value);
                     await SaveHistoricalDataAsync(value, symbol);
                 }
                 else
@@ -102,16 +108,17 @@ namespace IFi.Presentation.VM.Maui
             }
             return dataBySymbol;
         }
-        private async Task<Stock[]> ReadHistoricalDataAsync(string symbol)
+        private async Task<(Stock[] stocks, DateTime lastWriteTime)> ReadHistoricalDataAsync(string symbol)
         {
             string path = Path.Combine(FileSystem.Current.AppDataDirectory, _historicalDataDirectory, $"{symbol}.txt");
             Stock[] data = null;
-            if (File.Exists(path))
+            var fi = new FileInfo(path);
+            if (fi.Exists)
             {
                 string json = await File.ReadAllTextAsync(path);
-                data = JsonSerializer.Deserialize<Stock[]>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);
+                data = JsonSerializer.Deserialize<Stock[]>(json, DateTimeOffsetConverter_ISO8601.DefaultJsonSerializerOptions);                
             }
-            return data;
+            return (data, fi.LastWriteTime);
         }
         private Task SaveHistoricalDataAsync(Stock[] data, string symbol)
         {
@@ -161,8 +168,9 @@ namespace IFi.Presentation.VM.Maui
                 historicalData = (await GetHistoricalDataAsync(HistoricalDataFrom, HistoricalDataTo, ticker.Symbol)).Values.First();
                 stock = historicalData.OrderByDescending(x => x.Date).FirstOrDefault();
             }
-            var stockPosition = new StockPosition(
-                stock ?? (await _repo.GetStocksAsync(new[] { ticker.Symbol })).Single(), ticker);
+            stock = stock ?? (await _repo.GetStocksAsync(new[] { ticker.Symbol })).Single();
+            AdjustForSplits(stock);
+            var stockPosition = new StockPosition(stock, ticker);
             stockPosition.HistoricalData = historicalData;
             stockPositions.Add(stockPosition);
             foreach (var _stockPosition in stockPositions)
@@ -187,10 +195,26 @@ namespace IFi.Presentation.VM.Maui
 
         internal static bool IsHistoricalDataComplete(IEnumerable<Stock> historicalData, DateTime from, DateTime to)
         {
+            from = from.GetClosestWeekDay(false);
+            to = to.GetClosestWeekDay(true);
             var ordered = historicalData.OrderBy(x => x.Date);
-            return ordered.First().Date <= from && ordered.Last().Date >= to;
+            return ordered.First().Date.Date <= from && ordered.Last().Date.Date >= to;
             //does not account for gaps -> TODO, but how?
-            //...
+        }
+        private static void AdjustForSplits(Stock stock)
+        {
+            stock.Low = stock.Low * stock.SplitFactor;
+            stock.High = stock.High * stock.SplitFactor;
+            stock.Open = stock.Open * stock.SplitFactor;
+            stock.Close = stock.Close * stock.SplitFactor;
+            stock.SplitFactor = 1;
+        }
+        private static void AdjustForSplits(IEnumerable<Stock> data)
+        {
+            foreach (var stock in data)
+            {
+                AdjustForSplits(stock);
+            }
         }
     }
 }

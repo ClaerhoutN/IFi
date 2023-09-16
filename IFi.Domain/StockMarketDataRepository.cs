@@ -19,6 +19,7 @@ namespace IFi.Domain
         public Task<IReadOnlyList<Stock>> GetStocksAsync(string[] tickers) => GetStocksAsync(tickers, null);
         public async Task<IReadOnlyList<Stock>> GetStocksAsync(string[] tickers, string exchange)
         {
+            if(! tickers.Any()) return new List<Stock>() { };
             try
             {
                 string today = DateTime.Today.ToString("yyyy-MM-dd");
@@ -85,6 +86,7 @@ namespace IFi.Domain
         private const int limit = 1000;
         public async Task<Dictionary<string, Stock[]>> GetHistoricalDataAsync(string[] tickers, DateTime from, DateTime to)
         {
+            if (!tickers.Any()) return new Dictionary<string, Stock[]>();
             List<Stock> data = new List<Stock>();
             int offset = 0;
             int total = -1;
