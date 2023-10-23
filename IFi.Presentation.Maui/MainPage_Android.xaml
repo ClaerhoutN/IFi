@@ -212,6 +212,7 @@
                 </Border>
             </VerticalStackLayout>
         </Grid>
+        <ActivityIndicator Grid.Row="2" IsRunning="{Binding IsLoading}"  />
         <CollectionView Grid.Row="2" ItemsSource="{Binding StockPositions}">
             <CollectionView.Footer>
                 <StackLayout BackgroundColor="LightGray">

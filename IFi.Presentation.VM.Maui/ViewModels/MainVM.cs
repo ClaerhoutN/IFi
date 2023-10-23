@@ -22,6 +22,8 @@ namespace IFi.Presentation.VM.Maui.ViewModels
         public StockMarketDataFileService FileService { get; } //todo: make private and construct StockMarketDataFileService with DI
         [ObservableProperty]
         private IEnumerable<StockPosition> _stockPositions;
+        [ObservableProperty]
+        private bool _isLoading;
         public decimal TotalValue => StockPositions?.Sum(x => x.Value) ?? 0m;
         public float TotalTargetHoldingPct => StockPositions?.Sum(x => x.TargetHoldingPct) ?? 0f;
         private readonly Func<Page, Task> _navigate;
@@ -98,7 +100,9 @@ namespace IFi.Presentation.VM.Maui.ViewModels
 
         public async Task InitializeAsync()
         {
+            IsLoading = true;
             StockPositions = (await FileService.GetStockPositionsAsync()).OrderBy(x => x.Stock.Symbol);
+            IsLoading = false;
             foreach(var stockPosition in StockPositions)
             {
                 stockPosition.PropertyChanged += StockPosition_PropertyChanged;
