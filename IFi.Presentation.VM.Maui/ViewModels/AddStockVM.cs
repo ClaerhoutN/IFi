@@ -27,7 +27,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
             _mainVm = mainVm;
             AddStockCommand = new Command(async () =>
             {
-                await _mainVm.FileService.AddStockPositionAsync(Ticker);
+                await _mainVm.AddStockPositionAsync(Ticker);
                 await navigateBack();
             });
             SearchCommand = new Command<string>(async s => await Search(s));

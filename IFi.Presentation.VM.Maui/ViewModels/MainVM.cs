@@ -2,12 +2,14 @@
 using IFi.Domain;
 using IFi.Domain.ApiResponse;
 using IFi.Domain.Models;
+using IFi.Utilities.Collections.ObjectModel;
 using IFi.Utilities.JsonConverters;
 using LiveChartsCore.Measure;
 using Microsoft.Maui.Controls;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,9 +21,8 @@ namespace IFi.Presentation.VM.Maui.ViewModels
 {
     public partial class MainVM : ObservableObject
     {
-        public StockMarketDataFileService FileService { get; } //todo: make private and construct StockMarketDataFileService with DI
-        [ObservableProperty]
-        private IEnumerable<StockPosition> _stockPositions;
+        private readonly StockMarketDataFileService _fileService;
+        public SilentObservableCollection<StockPosition> StockPositions { get; } = new SilentObservableCollection<StockPosition>();
         [ObservableProperty]
         private bool _isLoading;
         public decimal TotalValue => StockPositions?.Sum(x => x.Value) ?? 0m;
@@ -71,21 +72,24 @@ namespace IFi.Presentation.VM.Maui.ViewModels
             ReverseSortOrderCommand = new Command(() => Sort(_sortedField));
             SelectedPeriod = "1 day";
             PropertyChanged += MainVM_PropertyChanged;
-            FileService = new(sp => StockPositions = sp, () => StockPositions, StockPosition_PropertyChanged);
+            _fileService = new(StockPositions, StockPosition_PropertyChanged);
+            ((INotifyPropertyChanged)StockPositions).PropertyChanged += StockPositions_PropertyChanged;
         }
 
         private void MainVM_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(StockPositions))
+            if(e.PropertyName == nameof(SelectedPeriod))
+                Sort(SelectedPeriod);
+        }
+        private void StockPositions_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName == nameof(StockPositions.Count))
             {
                 OnPropertyChanged(nameof(TotalValue));
                 OnPropertyChanged(nameof(TotalTargetHoldingPct));
             }
-            if(e.PropertyName == nameof(SelectedPeriod))
-                Sort(SelectedPeriod);
-
         }
-
+        
         private void StockPosition_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(StockPosition.Value))
@@ -101,7 +105,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
         public async Task InitializeAsync()
         {
             IsLoading = true;
-            StockPositions = (await FileService.GetStockPositionsAsync()).OrderBy(x => x.Stock.Symbol);
+            StockPositions.ResetRange((await _fileService.GetStockPositionsAsync()).OrderBy(x => x.Stock.Symbol));
             IsLoading = false;
             foreach(var stockPosition in StockPositions)
             {
@@ -114,7 +118,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
             await _fileLocker.WaitAsync();
             try
             {
-                await FileService.SaveStockPositionsAsync(StockPositions.ToList());
+                await _fileService.SaveStockPositionsAsync(StockPositions.ToList());
             }
             finally
             {
@@ -227,8 +231,11 @@ namespace IFi.Presentation.VM.Maui.ViewModels
                         break;
                     }
             }
-            if(stockPositions != null)
-                StockPositions = stockPositions.ToList();
+            if (stockPositions != null)
+                StockPositions.ResetRange(stockPositions);
         }
+
+        internal Task AddStockPositionAsync(Ticker ticker) => _fileService.AddStockPositionAsync(ticker);
+        internal Task DeleteStockPositionAsync(StockPosition stockPosition) => _fileService.DeleteStockPositionAsync(stockPosition);
     }
 }

@@ -53,7 +53,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
             DeleteStockCommand = new Command(
                 async () =>
                 {
-                    await mainVm.FileService.DeleteStockPositionAsync(StockPosition);
+                    await mainVm.DeleteStockPositionAsync(StockPosition);
                     await navigateBack();
                 });
             PositionEnteredCommand = new Command<Microsoft.Maui.Controls.Entry>(entry =>

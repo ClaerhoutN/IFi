@@ -3,6 +3,7 @@ using IFi.Domain.ApiResponse;
 using IFi.Domain.Models;
 using IFi.Presentation.VM.Maui.ViewModels;
 using IFi.Utilities;
+using IFi.Utilities.Collections.ObjectModel;
 using IFi.Utilities.JsonConverters;
 using LiveChartsCore.Measure;
 using System;
@@ -25,15 +26,13 @@ namespace IFi.Presentation.VM.Maui
         private DateTime HistoricalDataFrom => DateTime.Today.AddYears(-1);
         private DateTime HistoricalDataTo => DateTime.Today;
 
-        private readonly Action<IEnumerable<StockPosition>> _setStockPositions;
-        private readonly Func<IEnumerable<StockPosition>> _getStockPositions;
+        private readonly SilentObservableCollection<StockPosition> _stockPositions;
         private readonly PropertyChangedEventHandler _stockPositionPropertyChanged;
 
-        public StockMarketDataFileService(Action<IEnumerable<StockPosition>> setStockPositions, Func<IEnumerable<StockPosition>> getStockPositions, PropertyChangedEventHandler stockPositionPropertyChanged)
+        public StockMarketDataFileService(SilentObservableCollection<StockPosition> stockPositions, PropertyChangedEventHandler stockPositionPropertyChanged)
         {
-            _setStockPositions = setStockPositions;
-            _getStockPositions = getStockPositions;
             _stockPositionPropertyChanged = stockPositionPropertyChanged;
+            _stockPositions = stockPositions;
         }
 
         public async Task<IReadOnlyList<StockPosition>> GetStockPositionsAsync()
@@ -155,7 +154,6 @@ namespace IFi.Presentation.VM.Maui
 
         internal async Task AddStockPositionAsync(Ticker ticker)
         {
-            var stockPositions = _getStockPositions().ToList();
             Stock[] historicalData = null;
             Stock stock = null;
             if (Currency.IsCurrency(ticker))
@@ -172,25 +170,20 @@ namespace IFi.Presentation.VM.Maui
             AdjustForSplits(stock);
             var stockPosition = new StockPosition(stock, ticker);
             stockPosition.HistoricalData = historicalData;
-            stockPositions.Add(stockPosition);
-            foreach (var _stockPosition in stockPositions)
-                _stockPosition.Refresh(stockPositions);
+            _stockPositions.Add(stockPosition);
+            foreach (var _stockPosition in _stockPositions)
+                _stockPosition.Refresh(_stockPositions);
             stockPosition.PropertyChanged += _stockPositionPropertyChanged;
-            await SaveStockPositionsAsync(stockPositions);
-
-            _setStockPositions(stockPositions);
+            await SaveStockPositionsAsync(_stockPositions);
         }
 
         internal async Task DeleteStockPositionAsync(StockPosition stockPosition)
         {
-            var stockPositions = _getStockPositions().ToList();
-            stockPositions.Remove(stockPosition);
-            foreach (var _stockPosition in stockPositions)
-                _stockPosition.Refresh(stockPositions);
+            _stockPositions.Remove(stockPosition);
+            foreach (var _stockPosition in _stockPositions)
+                _stockPosition.Refresh(_stockPositions);
             stockPosition.PropertyChanged -= _stockPositionPropertyChanged;
-            await SaveStockPositionsAsync(stockPositions);
-
-            _setStockPositions(stockPositions);
+            await SaveStockPositionsAsync(_stockPositions);
         }
 
         internal static bool IsHistoricalDataComplete(IEnumerable<Stock> historicalData, DateTime from, DateTime to)
