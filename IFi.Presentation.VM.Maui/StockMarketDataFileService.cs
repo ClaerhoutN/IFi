@@ -146,12 +146,6 @@ namespace IFi.Presentation.VM.Maui
             return File.WriteAllTextAsync(_stockPositionsFileName, json);
         }
 
-        internal async Task AddStockPositionAsync(string symbol)
-        {
-            var ticker = await _repo.GetTickerAsync(symbol);
-            await AddStockPositionAsync(ticker);
-        }
-
         internal async Task AddStockPositionAsync(Ticker ticker)
         {
             Stock[] historicalData = null;
@@ -188,6 +182,7 @@ namespace IFi.Presentation.VM.Maui
 
         internal static bool IsHistoricalDataComplete(IEnumerable<Stock> historicalData, DateTime from, DateTime to)
         {
+            return true;
             from = from.GetClosestWeekDay(false);
             to = to.GetClosestWeekDay(true);
             var ordered = historicalData.OrderBy(x => x.Date);

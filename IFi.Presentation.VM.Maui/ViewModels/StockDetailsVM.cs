@@ -21,7 +21,7 @@ namespace IFi.Presentation.VM.Maui.ViewModels
         public Ticker Ticker => StockPosition.Ticker;
         public ISeries[] Series { get; }
         public Axis[] XAxes { get; }
-        public bool ChartVisibile => StockPosition.HistoricalData.Length >= 2;
+        public bool ChartVisible => StockPosition.HistoricalData.Length >= 2;
         public int Position
         {
             get => StockPosition.Position;

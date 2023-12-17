@@ -74,7 +74,7 @@
             </Label>
         </Grid>
         <Button Margin="5" Text="Delete" Command="{Binding DeleteStockCommand}"/>
-        <Grid HeightRequest="400" IsVisible="{Binding ChartVisibile}">
+        <Grid HeightRequest="400" IsVisible="{Binding ChartVisible}">
             <lvc:CartesianChart
                 Series="{Binding Series}" XAxes="{Binding XAxes}">
             </lvc:CartesianChart>

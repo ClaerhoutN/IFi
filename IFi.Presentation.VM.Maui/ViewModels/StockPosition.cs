@@ -88,13 +88,12 @@ namespace IFi.Presentation.VM.Maui.ViewModels
 
         private Color GetBackgroundColor()
         {
-            float currentOnTargetHoldingRatio = CurrentHoldingPct / TargetHoldingPct;
+            float currentOnTargetHoldingRatio = CurrentHoldingPct - TargetHoldingPct;
             byte r = 255;
             byte g = 255, b = 255;
-            if(currentOnTargetHoldingRatio < 1f)
-            {
-                g = b = (byte)(currentOnTargetHoldingRatio * 255f);
-            }
+
+            g = b = (byte)((1f - (Math.Abs(currentOnTargetHoldingRatio) / TargetHoldingPct)) * 255f);
+
             return Color.FromRgb(r, g, b);
         }
     }
