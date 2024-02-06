@@ -17,15 +17,14 @@ namespace IFi.Presentation.Maui
                 .AddSkiaSharp()
                 .AddDefaultMappers()
                 .AddLightTheme()
-                .HasMap<Stock>((stock, point) =>
+                .HasMap<Stock>((stock, index) =>
                 {
-                    point.PrimaryValue = (double)stock.High;
-                    //point.SecondaryValue = point.Context.Entity.EntityIndex;
-                    point.SecondaryValue = stock.Date.Ticks;
-
-                    point.TertiaryValue = (double)stock.Open;
-                    point.QuaternaryValue = (double)stock.Close;
-                    point.QuinaryValue = (double)stock.Low;
+                    return new LiveChartsCore.Kernel.Coordinate(
+                        stock.Date.Ticks,
+                        (double)stock.High, 
+                        (double)stock.Open, 
+                        (double)stock.Close, 
+                        (double)stock.Low);
                 })
             );
         }
