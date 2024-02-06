@@ -182,7 +182,6 @@ namespace IFi.Presentation.VM.Maui
 
         internal static bool IsHistoricalDataComplete(IEnumerable<Stock> historicalData, DateTime from, DateTime to)
         {
-            return true;
             from = from.GetClosestWeekDay(false);
             to = to.GetClosestWeekDay(true);
             var ordered = historicalData.OrderBy(x => x.Date);
