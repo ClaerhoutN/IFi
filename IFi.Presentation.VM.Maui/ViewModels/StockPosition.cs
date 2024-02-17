@@ -91,8 +91,8 @@ namespace IFi.Presentation.VM.Maui.ViewModels
             float currentOnTargetHoldingRatio = CurrentHoldingPct - TargetHoldingPct;
             byte r = 255;
             byte g = 255, b = 255;
-
-            g = b = (byte)((1f - (Math.Abs(currentOnTargetHoldingRatio) / TargetHoldingPct)) * 255f);
+            if(TargetHoldingPct != 0f)
+                g = b = (byte)((1f - (Math.Abs(currentOnTargetHoldingRatio) / TargetHoldingPct)) * 255f);
 
             return Color.FromRgb(r, g, b);
         }
